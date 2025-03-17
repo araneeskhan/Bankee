@@ -8,12 +8,7 @@ import { NotificationService } from './NotificationService';
 import { COLORS } from './styles';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyC44aTsCOOGA_sXMVAovFjMNaoKrGXZOxY",
-  authDomain: "bankee-82592.firebaseapp.com",
-  projectId: "bankee-82592",
-  storageBucket: "bankee-82592.firebasestorage.app",
-  messagingSenderId: "962949102346",
-  appId: "1:962949102346:web:82a03514595e16f23418f3"
+// You Firebase Details
 };
 
 // Initialize Firebase
