@@ -25,10 +25,6 @@ Bankee is a modern, feature-rich mobile banking application built with React Nat
 - Linear Gradient
 - AsyncStorage
 
-## 📱 Screenshots
-
-[Add your app screenshots here]
-
 ## 🛠️ Installation
 
 1. Clone the repository:
