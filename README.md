@@ -2,18 +2,20 @@
 
 ## 🌟 Overview
 
-Bankee is a modern, feature-rich mobile banking application built with React Native and Expo. It provides a seamless banking experience with a beautiful dark-themed UI and comprehensive financial management features.
+Bankee is a modern, feature-rich mobile banking application built with React Native and Expo. It provides a seamless banking experience and comprehensive financial management features.
 
 ## ✨ Features
 
-- 🔐 Secure Authentication
-- 💳 Wallet Management
-- 👥 Contact Management
-- 💸 Easy Money Transfers
-- 📊 Transaction History
-- 🔔 Real-time Notifications
-- 💰 Subscription Management
-- 👤 Profile Management
+
+🔐 **Secure Authentication**  
+💳 **Wallet** 
+👥 **Contacts** (or **Send & Receive Money**)  
+💸 **Easy Transfers**  
+📊 **Transaction History**  
+🔔 **Real-time Notifications**  
+💰 **Subscriptions** 
+👤 **Profile**  
+
 
 ## 🚀 Technologies
 
