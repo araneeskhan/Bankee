@@ -6,15 +6,15 @@ Bankee is a modern, feature-rich mobile banking application built with React Nat
 
 ## ✨ Features
 
+🔐 Secure Authentication
+💳 Wallet 
+👥 Contacts (or Send & Receive Money)
+💸 Easy Transfers
+📊 Transaction History
+🔔 Real-time Notifications
+💰 Subscriptions 
+👤 Profile
 
-🔐 **Secure Authentication**  
-💳 **Wallet** 
-👥 **Contacts** (or **Send & Receive Money**)  
-💸 **Easy Transfers**  
-📊 **Transaction History**  
-🔔 **Real-time Notifications**  
-💰 **Subscriptions**
-👤 **Profile**  
 
 ## 🚀 Technologies
 
