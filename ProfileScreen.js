@@ -22,6 +22,7 @@ import { doc, onSnapshot } from 'firebase/firestore';
 import * as ImagePicker from 'expo-image-picker';
 import { formatDate } from './utils';
 import { Toast } from './components/Toast';
+import { BiometricService } from './BiometricService';
 
 const { width } = Dimensions.get('window');
 
@@ -29,6 +30,8 @@ const ProfileScreen = ({ navigation }) => {
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [biometricEnabled, setBiometricEnabled] = useState(false);
+  const [biometricAvailable, setBiometricAvailable] = useState(false);
   const [toast, setToast] = useState({
     visible: false,
     message: '',
@@ -53,6 +56,15 @@ const ProfileScreen = ({ navigation }) => {
         useNativeDriver: true,
       }),
     ]).start();
+
+    // Check biometric status
+    (async () => {
+      const supported = await BiometricService.isHardwareSupported();
+      const enrolled = await BiometricService.isEnrolled();
+      setBiometricAvailable(supported && enrolled);
+      const enabled = await BiometricService.isBiometricEnabled();
+      setBiometricEnabled(enabled);
+    })();
     
     const user = auth.currentUser;
     if (!user) {
@@ -70,6 +82,21 @@ const ProfileScreen = ({ navigation }) => {
 
     return unsubscribe;
   }, []);
+
+  const handleToggleBiometrics = async (val) => {
+    if (val) {
+      const authenticated = await BiometricService.authenticate('Confirm to enable biometric login');
+      if (authenticated) {
+        await BiometricService.setBiometricEnabled(true);
+        setBiometricEnabled(true);
+        setToast({ visible: true, message: 'Biometric authentication enabled!', type: 'success' });
+      }
+    } else {
+      await BiometricService.setBiometricEnabled(false);
+      setBiometricEnabled(false);
+      setToast({ visible: true, message: 'Biometric authentication disabled.', type: 'info' });
+    }
+  };
 
   const handleLogout = async () => {
     try {
@@ -338,6 +365,22 @@ const ProfileScreen = ({ navigation }) => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Settings</Text>
           
+          <View style={styles.settingItem}>
+            <View style={styles.settingContent}>
+              <View style={styles.settingIconContainer}>
+                <FontAwesome5 name="fingerprint" size={16} color={COLORS.primary} />
+              </View>
+              <Text style={styles.settingLabel}>Biometric Authentication</Text>
+            </View>
+            <Switch
+              value={biometricEnabled}
+              onValueChange={handleToggleBiometrics}
+              disabled={!biometricAvailable}
+              trackColor={{ false: COLORS.cardLight, true: COLORS.primary + '80' }}
+              thumbColor={biometricEnabled ? COLORS.primary : COLORS.textSecondary}
+            />
+          </View>
+
           <View style={styles.settingItem}>
             <View style={styles.settingContent}>
               <View style={styles.settingIconContainer}>

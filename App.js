@@ -43,6 +43,7 @@ import SignUpScreen from './SignUpScreen';
 import NotificationsScreen from './NotificationsScreen';
 import TransactionHistoryScreen from './TransactionHistoryScreen';
 import TransactionDetailScreen from './TransactionDetailScreen';
+import AnalyticsScreen from './AnalyticsScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -148,6 +149,7 @@ function TabNavigator() {
 
 export default function App() {
   return (
+<>    <StatusBar hidden={true} />
     <NavigationContainer
       theme={{
         dark: true,
@@ -187,8 +189,11 @@ export default function App() {
         <Stack.Screen name="Contacts" component={ContactsScreen} />
         <Stack.Screen name="TransactionHistory" component={TransactionHistoryScreen} />
         <Stack.Screen name="TransactionDetail" component={TransactionDetailScreen} />
+        <Stack.Screen name="Analytics" component={AnalyticsScreen} />
       </Stack.Navigator>
     </NavigationContainer>
+    </>
+
   );
 }
 

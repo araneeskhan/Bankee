@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   StyleSheet, 
   Text, 
@@ -18,6 +18,7 @@ import { FontAwesome5 } from '@expo/vector-icons';
 import { COLORS } from './styles';
 import { auth } from './firebase';
 import { signInWithEmailAndPassword } from 'firebase/auth';
+import { BiometricService } from './BiometricService';
 
 const { width } = Dimensions.get('window');
 
@@ -26,6 +27,51 @@ const AuthScreen = ({ navigation }) => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [biometricAvailable, setBiometricAvailable] = useState(false);
+  const [biometricType, setBiometricType] = useState('Biometrics');
+
+  useEffect(() => {
+    checkBiometrics();
+  }, []);
+
+  const checkBiometrics = async () => {
+    const supported = await BiometricService.isHardwareSupported();
+    const enrolled = await BiometricService.isEnrolled();
+    if (supported && enrolled) {
+      setBiometricAvailable(true);
+      const types = await BiometricService.getSupportedTypes();
+      if (types.includes('Face ID')) {
+        setBiometricType('Face ID');
+      } else if (types.includes('Fingerprint')) {
+        setBiometricType('Fingerprint');
+      }
+      
+      const enabled = await BiometricService.isBiometricEnabled();
+      if (enabled) {
+        handleBiometricAuth();
+      }
+    }
+  };
+
+  const handleBiometricAuth = async () => {
+    const success = await BiometricService.authenticate(`Sign in to Bankee with ${biometricType}`);
+    if (success) {
+      const savedCreds = await BiometricService.getSavedCredentials();
+      if (savedCreds?.email && savedCreds?.password) {
+        setLoading(true);
+        try {
+          await signInWithEmailAndPassword(auth, savedCreds.email, savedCreds.password);
+          navigation.replace('MainApp');
+        } catch (err) {
+          Alert.alert('Biometric Login Failed', 'Please log in with your email and password.');
+        } finally {
+          setLoading(false);
+        }
+      } else {
+        Alert.alert('Setup Required', 'Please sign in with password first to enable quick biometric login.');
+      }
+    }
+  };
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -36,6 +82,9 @@ const AuthScreen = ({ navigation }) => {
     setLoading(true);
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      // Save credentials for future biometric login
+      await BiometricService.saveCredentials(email, password);
+      await BiometricService.setBiometricEnabled(true);
       navigation.replace('MainApp');
     } catch (error) {
       let errorMessage = 'An error occurred during login';
@@ -153,6 +202,22 @@ const AuthScreen = ({ navigation }) => {
                 <Text style={styles.buttonText}>Sign In</Text>
               )}
             </TouchableOpacity>
+
+            {biometricAvailable && (
+              <TouchableOpacity 
+                style={styles.biometricButton}
+                onPress={handleBiometricAuth}
+                disabled={loading}
+              >
+                <FontAwesome5 
+                  name={biometricType === 'Face ID' ? 'smile' : 'fingerprint'} 
+                  size={20} 
+                  color={COLORS.primary} 
+                  style={{ marginRight: 10 }}
+                />
+                <Text style={styles.biometricButtonText}>Sign in with {biometricType}</Text>
+              </TouchableOpacity>
+            )}
             
             <View style={styles.footer}>
               <Text style={styles.footerText}>Don't have an account? </Text>
@@ -272,6 +337,22 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  biometricButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderWidth: 1,
+    borderColor: COLORS.primary,
+    borderRadius: 12,
+    height: 52,
+    marginBottom: 20,
+  },
+  biometricButtonText: {
+    color: COLORS.primary,
+    fontSize: 15,
+    fontWeight: '600',
   },
   footer: {
     flexDirection: 'row',

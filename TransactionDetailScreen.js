@@ -47,6 +47,33 @@ const TransactionDetailScreen = ({ route, navigation }) => {
     }
   };
   
+  const handleExportReceipt = async () => {
+    try {
+      const receiptText = 
+`================================
+         BANKEE RECEIPT         
+================================
+Transaction ID: ${transaction.id || 'TXN-' + Math.floor(Math.random()*1000000)}
+Date: ${formatDate(transaction.timestamp)}
+Type: ${transaction.type?.toUpperCase()}
+Amount: ${isIncome ? '+' : '-'}$${transaction.amount?.toFixed(2)}
+Status: ${transaction.status || 'Completed'}
+Description: ${transaction.description || 'N/A'}
+${transaction.to?.name ? 'Recipient: ' + transaction.to.name : ''}
+${transaction.from?.name ? 'Sender: ' + transaction.from.name : ''}
+================================
+Bankee - Banking Made Simple
+================================`;
+
+      await Share.share({
+        message: receiptText,
+        title: 'Transaction Receipt',
+      });
+    } catch (error) {
+      console.error('Error sharing receipt:', error);
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
@@ -56,7 +83,9 @@ const TransactionDetailScreen = ({ route, navigation }) => {
           <FontAwesome5 name="arrow-left" size={20} color={COLORS.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Transaction Details</Text>
-        <View style={{ width: 20 }} />
+        <TouchableOpacity onPress={handleExportReceipt}>
+          <FontAwesome5 name="share-alt" size={20} color={COLORS.primary} />
+        </TouchableOpacity>
       </View>
       
       <ScrollView style={styles.content}>
@@ -117,6 +146,11 @@ const TransactionDetailScreen = ({ route, navigation }) => {
               </>
             )}
           </View>
+
+          <TouchableOpacity style={styles.exportButton} onPress={handleExportReceipt}>
+            <FontAwesome5 name="file-download" size={16} color={COLORS.text} style={{ marginRight: 8 }} />
+            <Text style={styles.exportButtonText}>Export Receipt</Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -188,6 +222,22 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: COLORS.text,
     fontWeight: '500',
+  },
+  exportButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.primary,
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    marginTop: 24,
+    width: '100%',
+  },
+  exportButtonText: {
+    color: COLORS.text,
+    fontSize: 15,
+    fontWeight: 'bold',
   },
 });
 

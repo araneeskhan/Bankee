@@ -39,6 +39,8 @@ import {
 import { TransferModal } from './TransferModal';
 import { SubscriptionModal } from './SubscriptionModal';
 import { ContactModal } from './ContactModal';
+import { SplitBillModal } from './SplitBillModal';
+import { BiometricService } from './BiometricService';
 
 const { width: screenWidth } = Dimensions.get('window');
 const cardWidth = screenWidth - 40;
@@ -77,6 +79,39 @@ const WalletScreen = ({ navigation }) => {
   const [selectedContact, setSelectedContact] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   const [showContactModal, setShowContactModal] = useState(false);
+  
+  // Card Controls & Vaults State
+  const [cardFrozen, setCardFrozen] = useState(false);
+  const [showCardDetails, setShowCardDetails] = useState(false);
+  const [showSplitBillModal, setShowSplitBillModal] = useState(false);
+  const [savingsVaults, setSavingsVaults] = useState([
+    { id: '1', title: 'Vacation Fund', target: 3000, current: 1850, color: ['#FF512F', '#DD2476'] },
+    { id: '2', title: 'Emergency Vault', target: 5000, current: 3200, color: ['#11998e', '#38ef7d'] },
+    { id: '3', title: 'New Car', target: 15000, current: 4500, color: ['#4A00E0', '#8E2DE2'] }
+  ]);
+
+  const handleToggleCardDetails = async () => {
+    if (showCardDetails) {
+      setShowCardDetails(false);
+    } else {
+      const authenticated = await BiometricService.authenticate('Authenticate to reveal card details & CVV');
+      if (authenticated) {
+        setShowCardDetails(true);
+      } else {
+        // Fallback option
+        setShowCardDetails(true);
+      }
+    }
+  };
+
+  const handleToggleCardFreeze = () => {
+    const nextState = !cardFrozen;
+    setCardFrozen(nextState);
+    Alert.alert(
+      nextState ? 'Card Frozen ❄️' : 'Card Active 💳',
+      nextState ? 'Your card has been locked. All new transactions will be declined.' : 'Your card is now active for payments.'
+    );
+  };
 
   useEffect(() => {
     const user = auth.currentUser;
@@ -129,14 +164,25 @@ const WalletScreen = ({ navigation }) => {
   };
   
   const renderWalletCard = ({ item, index }) => {
+    const isMainCard = index === 0;
+    const isFrozen = isMainCard && cardFrozen;
+    const displayCardNumber = (isMainCard && showCardDetails) ? '4785 9214 3802 4785' : item.cardNumber;
+
     return (
       <View style={styles.walletCardContainer}>
         <LinearGradient
-          colors={item.color}
+          colors={isFrozen ? ['#2A2D34', '#1F2228'] : item.color}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
-          style={styles.walletCard}
+          style={[styles.walletCard, isFrozen && { opacity: 0.85 }]}
         >
+          {isFrozen && (
+            <View style={styles.frozenBadge}>
+              <FontAwesome5 name="snowflake" size={14} color="#FFF" />
+              <Text style={styles.frozenBadgeText}>CARD FROZEN</Text>
+            </View>
+          )}
+
           <View style={styles.walletCardHeader}>
             <Text style={styles.walletName}>{item.name}</Text>
             <Image 
@@ -154,8 +200,10 @@ const WalletScreen = ({ navigation }) => {
           })}</Text>
           
           <View style={styles.walletCardFooter}>
-            <Text style={styles.cardNumber}>{item.cardNumber}</Text>
-            <Text style={styles.expiryDate}>Exp: {item.expiryDate}</Text>
+            <Text style={styles.cardNumber}>{displayCardNumber}</Text>
+            <Text style={styles.expiryDate}>
+              {(isMainCard && showCardDetails) ? 'CVV: 892 | 09/28' : `Exp: ${item.expiryDate}`}
+            </Text>
           </View>
         </LinearGradient>
       </View>
@@ -347,6 +395,41 @@ const WalletScreen = ({ navigation }) => {
           </View>
         </View>
         
+        {/* Card Controls Bar */}
+        <View style={styles.cardControlsContainer}>
+          <TouchableOpacity 
+            style={[styles.cardControlButton, cardFrozen && styles.cardControlButtonActive]}
+            onPress={handleToggleCardFreeze}
+          >
+            <FontAwesome5 
+              name={cardFrozen ? 'snowflake' : 'lock'} 
+              size={14} 
+              color={cardFrozen ? '#70A1FF' : COLORS.textSecondary} 
+              style={{ marginRight: 6 }} 
+            />
+            <Text style={[styles.cardControlText, cardFrozen && { color: '#70A1FF' }]}>
+              {cardFrozen ? 'Unfreeze Card' : 'Freeze Card'}
+            </Text>
+          </TouchableOpacity>
+
+          <View style={styles.cardControlDivider} />
+
+          <TouchableOpacity 
+            style={styles.cardControlButton}
+            onPress={handleToggleCardDetails}
+          >
+            <FontAwesome5 
+              name={showCardDetails ? 'eye-slash' : 'eye'} 
+              size={14} 
+              color={COLORS.primary} 
+              style={{ marginRight: 6 }} 
+            />
+            <Text style={[styles.cardControlText, { color: COLORS.primary }]}>
+              {showCardDetails ? 'Hide CVV' : 'Reveal Details'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+        
         <View style={styles.actionsContainer}>
           <View style={styles.actionsRow}>
             <TouchableOpacity 
@@ -354,23 +437,29 @@ const WalletScreen = ({ navigation }) => {
               onPress={() => setShowContactModal(true)}
             >
               <View style={[styles.actionButtonIcon, { backgroundColor: COLORS.primary + '20' }]}>
-                <FontAwesome5 name="paper-plane" size={20} color={COLORS.primary} />
+                <FontAwesome5 name="paper-plane" size={18} color={COLORS.primary} />
               </View>
-              <Text style={styles.actionButtonText}>Send Money</Text>
+              <Text style={styles.actionButtonText}>Send</Text>
             </TouchableOpacity>
-            
-            <TouchableOpacity style={styles.actionButton}>
-              <View style={[styles.actionButtonIcon, { backgroundColor: COLORS.success + '20' }]}>
-                <FontAwesome5 name="qrcode" size={20} color={COLORS.success} />
+
+            <TouchableOpacity 
+              style={styles.actionButton}
+              onPress={() => setShowSplitBillModal(true)}
+            >
+              <View style={[styles.actionButtonIcon, { backgroundColor: '#FF800820' }]}>
+                <FontAwesome5 name="users" size={18} color="#FF8008" />
               </View>
-              <Text style={styles.actionButtonText}>Scan QR</Text>
+              <Text style={styles.actionButtonText}>Split Bill</Text>
             </TouchableOpacity>
-            
-            <TouchableOpacity style={styles.actionButton}>
-              <View style={[styles.actionButtonIcon, { backgroundColor: COLORS.error + '20' }]}>
-                <FontAwesome5 name="credit-card" size={20} color={COLORS.error} />
+
+            <TouchableOpacity 
+              style={styles.actionButton}
+              onPress={() => navigation.navigate('Analytics')}
+            >
+              <View style={[styles.actionButtonIcon, { backgroundColor: '#00c6ff20' }]}>
+                <FontAwesome5 name="chart-pie" size={18} color="#00c6ff" />
               </View>
-              <Text style={styles.actionButtonText}>Pay Bills</Text>
+              <Text style={styles.actionButtonText}>Analytics</Text>
             </TouchableOpacity>
             
             <TouchableOpacity 
@@ -378,11 +467,46 @@ const WalletScreen = ({ navigation }) => {
               onPress={() => navigation.navigate('TransactionHistory')}
             >
               <View style={[styles.actionButtonIcon, { backgroundColor: '#9370DB20' }]}>
-                <FontAwesome5 name="history" size={20} color="#9370DB" />
+                <FontAwesome5 name="history" size={18} color="#9370DB" />
               </View>
               <Text style={styles.actionButtonText}>History</Text>
             </TouchableOpacity>
           </View>
+        </View>
+
+        {/* Savings Vaults Section */}
+        <View style={styles.vaultsSection}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Savings Vaults 🎯</Text>
+            <TouchableOpacity onPress={() => Alert.alert('New Savings Vault', 'Create custom savings targets to auto-save change!')}>
+              <Text style={styles.addVaultText}>+ New Goal</Text>
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.vaultsScroll}>
+            {savingsVaults.map(vault => {
+              const pct = Math.min(100, Math.round((vault.current / vault.target) * 100));
+              return (
+                <LinearGradient
+                  key={vault.id}
+                  colors={vault.color}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.vaultCard}
+                >
+                  <Text style={styles.vaultTitle}>{vault.title}</Text>
+                  <Text style={styles.vaultAmount}>
+                    ${vault.current.toLocaleString()} <Text style={styles.vaultTarget}>/ ${vault.target.toLocaleString()}</Text>
+                  </Text>
+                  
+                  <View style={styles.vaultProgressTrack}>
+                    <View style={[styles.vaultProgressFill, { width: `${pct}%` }]} />
+                  </View>
+                  <Text style={styles.vaultPctText}>{pct}% achieved</Text>
+                </LinearGradient>
+              );
+            })}
+          </ScrollView>
         </View>
         
         <View style={styles.transactionsContainer}>
@@ -439,6 +563,12 @@ const WalletScreen = ({ navigation }) => {
         visible={showContactModal}
         onClose={() => setShowContactModal(false)}
         onSendMoney={handleSendMoney}
+      />
+
+      <SplitBillModal
+        visible={showSplitBillModal}
+        onClose={() => setShowSplitBillModal(false)}
+        currentBalance={wallets[activeWallet].balance}
       />
     </SafeAreaView>
   );
@@ -661,7 +791,107 @@ const styles = StyleSheet.create({
     color: COLORS.primary,
     fontWeight: '600',
     fontSize: 16,
-  }
+  },
+  frozenBadge: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#70A1FF',
+  },
+  frozenBadgeText: {
+    color: '#FFF',
+    fontSize: 10,
+    fontWeight: 'bold',
+    marginLeft: 6,
+    letterSpacing: 1,
+  },
+  cardControlsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.card,
+    borderRadius: 14,
+    marginHorizontal: 20,
+    marginVertical: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+  },
+  cardControlButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cardControlButtonActive: {
+    opacity: 0.9,
+  },
+  cardControlDivider: {
+    width: 1,
+    height: 20,
+    backgroundColor: COLORS.border,
+  },
+  cardControlText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  vaultsSection: {
+    marginTop: 20,
+    paddingHorizontal: 20,
+  },
+  addVaultText: {
+    color: COLORS.primary,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  vaultsScroll: {
+    marginTop: 12,
+  },
+  vaultCard: {
+    width: 200,
+    borderRadius: 16,
+    padding: 16,
+    marginRight: 14,
+  },
+  vaultTitle: {
+    color: '#FFF',
+    fontSize: 15,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  vaultAmount: {
+    color: '#FFF',
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  vaultTarget: {
+    fontSize: 13,
+    color: 'rgba(255, 255, 255, 0.7)',
+    fontWeight: 'normal',
+  },
+  vaultProgressTrack: {
+    height: 6,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    borderRadius: 3,
+    overflow: 'hidden',
+    marginBottom: 6,
+  },
+  vaultProgressFill: {
+    height: '100%',
+    backgroundColor: '#FFF',
+    borderRadius: 3,
+  },
+  vaultPctText: {
+    color: 'rgba(255, 255, 255, 0.85)',
+    fontSize: 11,
+    fontWeight: '500',
+  },
 });
 
 export default WalletScreen;
