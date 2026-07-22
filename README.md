@@ -1,7 +1,7 @@
 # Bankee - Modern Mobile Banking Application 💳✨
 
-[![React Native](https://img.shields.io/badge/React_Native-0.76-61DAFB?style=flat&logo=react)](https://reactnative.dev/)
-[![Expo](https://img.shields.io/badge/Expo-v52.0-000000?style=flat&logo=expo)](https://expo.dev/)
+[![React Native](https://img.shields.io/badge/React_Native-0.81-61DAFB?style=flat&logo=react)](https://reactnative.dev/)
+[![Expo](https://img.shields.io/badge/Expo-v54.0-000000?style=flat&logo=expo)](https://expo.dev/)
 [![Firebase](https://img.shields.io/badge/Firebase-v11.4-FFCA28?style=flat&logo=firebase)](https://firebase.google.com/)
 
 Bankee is a state-of-the-art, feature-rich mobile banking application built with **React Native** and **Expo**, powered by **Firebase**. It offers a premium, modern dark-themed banking experience with real-time financial tracking, biometric security, card controls, split bill payments, expense analytics, and target savings vaults.
